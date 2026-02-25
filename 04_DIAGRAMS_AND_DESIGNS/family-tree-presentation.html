@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree Visualization and Exploration System - Master's Project</title>
+
+    <!-- Reveal.js 5.2.1 CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/highlight/monokai.css">
+
+    <!-- 字体CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.21/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.21/index.css">
+
+    <style>
+        /* CSS变量系统 */
+        :root {
+            /* 语义化色彩系统 */
+            --keyword-highlight: #e74c3c;
+            --success-highlight: #27ae60;
+            --info-highlight: #3498db;
+            --warning-highlight: #e67e22;
+            --number-highlight: #f39c12;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-light: #888888;
+
+            /* 毛玻璃效果 */
+            --glass-blur: blur(20px) saturate(120%);
+            --glass-blur-strong: blur(25px) saturate(140%);
+            --glass-blur-light: blur(10px) saturate(110%);
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-bg-hover: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+
+        /* 基础样式重置 */
+        .reveal {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 28px;
+            color: var(--text-primary);
+        }
+
+        .reveal .slides section {
+            max-height: 90vh;
+            padding: 30px;
+            text-align: left;
+            backdrop-filter: var(--glass-blur);
+            background: var(--glass-bg);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow), var(--glass-inset);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 10px 0;
+            overflow-y: auto;
+        }
+
+        .reveal .slides section:hover {
+            transform: translateY(-2px);
+            backdrop-filter: var(--glass-blur-strong);
+            background: var(--glass-bg-hover);
+        }
+
+        .reveal h1,
+        .reveal h2,
+        .reveal h3 {
+            text-transform: none;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .reveal h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, var(--info-highlight), var(--success-highlight));
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+        }
+
+        .reveal h2 {
+            font-size: 2em;
+            color: var(--info-highlight);
+            border-bottom: 3px solid var(--info-highlight);
+            padding-bottom: 10px;
+        }
+
+        .reveal h3 {
+            font-size: 1.5em;
+            color: var(--text-primary);
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* 强调色彩类 */
+        .keyword-highlight { color: var(--keyword-highlight); font-weight: 600; }
+        .success-highlight { color: var(--success-highlight); font-weight: 600; }
+        .info-highlight { color: var(--info-highlight); font-weight: 600; }
+        .warning-highlight { color: var(--warning-highlight); font-weight: 600; }
+        .number-highlight { color: var(--number-highlight); font-weight: 600; }
+
+        /* 布局组件 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .feature-card, .tech-card, .stat-card {
+            padding: 20px;
+            border-radius: 16px;
+            backdrop-filter: var(--glass-blur-light);
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover, .tech-card:hover, .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(39, 174, 96, 0.1));
+            border: 2px solid var(--info-highlight);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0;
+            backdrop-filter: var(--glass-blur-light);
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.8);
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8em;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        /* 动画效果 */
+        .auto-animate {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .stagger-animation {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .zoom-in-animation {
+            animation: zoomIn 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* 列表样式 */
+        .reveal ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .reveal li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .reveal li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success-highlight);
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        /* 特殊样式 */
+        .title-slide {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .title-slide .subtitle {
+            font-size: 1.2em;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        .title-slide .author {
+            font-size: 1.1em;
+            color: var(--info-highlight);
+            font-weight: 600;
+        }
+
+        .agenda-list {
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+
+        .challenge-solution {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .challenge, .solution {
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .challenge {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--keyword-highlight);
+        }
+
+        .solution {
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--success-highlight);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <!-- Slide 1: Title -->
+            <section class="title-slide">
+                <h1>Family Tree Visualization and Exploration System</h1>
+                <div class="subtitle">Master's Project Presentation</div>
+                <div class="author">Zhuokun Liu</div>
+            </section>
+
+            <!-- Slide 2: Contents -->
+            <section>
+                <h2>Contents</h2>
+                <div class="Contents-list">
+                    <ul>
+                        <li>Project Overview</li>
+                        <li>Design & Technologies</li>
+                        <li>Key Features</li>
+                        <li>Results & Evaluation</li>
+                        <li>Live Demo</li>
+                        <li>Q&A</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Slide 3: Project Overview -->
+            <section>
+                <h2>Project Overview</h2>
+                <div class="highlight-box">
+                    <p><strong>Challenge:</strong> Managing and exploring large, complex family data</p>
+                </div>
+                <div class="features-grid auto-animate">
+                    <div class="feature-card">
+                        <h3><span class="info-highlight">Dual Visualization</span></h3>
+                        <p>D3.js tree and Canvas-based view</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="success-highlight">Advanced Mapping</span></h3>
+                        <p>Complex relationship mapping with role-based access</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="warning-highlight">Based on Windows </span></h3>
+                        <p>Runs smoothly on Windows</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="keyword-highlight">Modern Web</span></h3>
+                        <p>Cutting-edge web technologies</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 4: Technology Stack -->
+            <section>
+                <h2>Technology Stack</h2>
+                <div class="tech-grid auto-animate">
+                    <div class="tech-card">
+                        <h3><span class="info-highlight">Frontend</span></h3>
+                        <ul>
+                            <li>Vue 3</li>
+                            <li>D3.js</li>
+                            <li>Canvas API</li>
+                        </ul>
+                    </div>
+                    <div class="tech-card">
+                        <h3><span class="success-highlight">Backend</span></h3>
+                        <ul>
+                            <li>Node.js</li>
+                            <li>Express</li>
+                            <li>MySQL</li>
+                        </ul>
+                    </div>
+                    <div class="tech-card">
+                        <h3><span class="warning-highlight">Security & Tools</span></h3>
+                        <ul>
+                            <li>Password Verification</li>
+                            <li>Git Version Control</li>
+                            <li>Role-based Access</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <p><strong>Result:</strong> Fast, flexible, and scalable system architecture</p>
+                </div>
+            </section>
+
+            <!-- Slide 5: System Architecture -->
+            <section>
+                <h2>System Architecture</h2>
+                <div class="features-grid auto-animate">
+                    <div class="feature-card">
+                        <h3><span class="info-highlight">Frontend Layer</span></h3>
+                        <p>User interface and visualization</p>
+                        <ul>
+                            <li>Interactive tree visualization</li>
+                            <li>Real-time search</li>
+                            <li>Responsive design</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="success-highlight">Backend Layer</span></h3>
+                        <p>Business logic and APIs</p>
+                        <ul>
+                            <li>Relationship algorithms</li>
+                            <li>Data validation</li>
+                            <li>Security middleware</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="warning-highlight">Database Layer</span></h3>
+                        <p>Data storage and management</p>
+                        <ul>
+                            <li>Optimized queries</li>
+                            <li>Data integrity</li>
+                            <li>Scalable structure</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="keyword-highlight">Benefits</span></h3>
+                        <p>Scalable, secure, maintainable</p>
+                        <ul>
+                            <li>Separation of concerns</li>
+                            <li>Easy to extend</li>
+                            <li>Performance optimized</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 6: Database Design -->
+            <section>
+                <h2>Database Design</h2>
+                <div class="features-grid auto-animate">
+                    <div class="feature-card">
+                        <h3><span class="info-highlight">Core Tables</span></h3>
+                        <ul>
+                            <li><strong>People Table:</strong> Individual records</li>
+                            <li><strong>Families Table:</strong> Relationship mappings</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="success-highlight">Performance</span></h3>
+                        <ul>
+                            <li>Indexes for fast queries</li>
+                            <li>Constraints for data integrity</li>
+                            <li>Average response: <span class="number-highlight">&lt;50ms</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <p><strong>Scalability:</strong> Efficiently handles very large datasets with smooth performance</p>
+                </div>
+            </section>
+
+            <!-- Slide 7: Key Features -->
+            <section>
+                <h2>Key Features</h2>
+                <div class="highlight-box">
+                    <h3><span class="info-highlight">Family Tree Visualization</span></h3>
+                </div>
+                <div class="features-grid auto-animate">
+                    <div class="feature-card">
+                        <h4><span class="success-highlight">Interactive Navigation</span></h4>
+                        <ul>
+                            <li>Expand/collapse branches</li>
+                            <li>Zoom and pan freely</li>
+                            <li>Minimap for large trees</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="info-highlight">Detailed Profiles</span></h4>
+                        <ul>
+                            <li>Side panel information</li>
+                            <li>Color-coded relationships</li>
+                            <li>Export functionality</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="warning-highlight">Advanced Exploration</span></h4>
+                        <ul>
+                            <li>Beyond parent-child links</li>
+                            <li>Complex relationship paths</li>
+                            <li>Multi-generational view</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="keyword-highlight">User Experience</span></h4>
+                        <ul>
+                            <li>Intuitive interface</li>
+                            <li>Real-time updates</li>
+                            <li>Lab responsive</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 8: Advanced Relationship Mapping -->
+            <section>
+                <h2>Advanced Relationship Mapping</h2>
+                <div class="tech-grid auto-animate">
+                    <div class="tech-card">
+                        <h3><span class="info-highlight">Direct Relatives</span></h3>
+                        <ul>
+                            <li>Parents & Children</li>
+                            <li>Siblings</li>
+                        </ul>
+                    </div>
+                    <div class="tech-card">
+                        <h3><span class="success-highlight">Extended Family</span></h3>
+                        <ul>
+                            <li>Cousins & Aunts/Uncles</li>
+                            <li>Grandparents</li>
+                        </ul>
+                    </div>
+                    <div class="tech-card">
+                        <h3><span class="warning-highlight">Analysis Features</span></h3>
+                        <ul>
+                            <li>Automatic calculation</li>
+                            <li>Generation tracking</li>
+                            <li>Degree of separation</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 9: Role-Based Access Control -->
+            <section>
+                <h2>Role-Based Access Control</h2>
+                <div class="features-grid auto-animate">
+                    <div class="feature-card">
+                        <h3><span class="info-highlight">Administrators</span></h3>
+                        <ul>
+                            <li>Full CRUD operations</li>
+                            <li>Data management</li>
+                            <li>User management</li>
+                            <li>System configuration</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3><span class="success-highlight">Visitors</span></h3>
+                        <ul>
+                            <li>Read-only access</li>
+                            <li>Tree exploration</li>
+                            <li>Search functionality</li>
+                            <li>Data integrity protection</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <p><strong>Security:</strong> Ensures data integrity while providing appropriate access levels</p>
+                </div>
+            </section>
+
+           
+
+            <!-- Slide 11: Results & Evaluation -->
+            <section>
+                <h2>Results & Evaluation</h2>
+                <div class="highlight-box">
+                    <h3><span class="success-highlight">All Project Goals Met</span></h3>
+                </div>
+                <div class="features-grid auto-animate">
+                    <div class="feature-card">
+                        <h4><span class="info-highlight">Core Features</span></h4>
+                        <ul>
+                            <li>✓ Dual visualization methods</li>
+                            <li>✓ Advanced relationship mapping</li>
+                            <li>✓ Secure, role-based access</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="success-highlight">User Experience</span></h4>
+                        <ul>
+                            <li>✓ Real-time search</li>
+                            <li>✓ Responsive design</li>
+                            <li>✓ Easy navigation</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="warning-highlight">User Feedback</span></h4>
+                        <ul>
+                            <li>✓ Visually clear interface</li>
+                            <li>✓ Intuitive navigation</li>
+                            <li>✓ Fast performance</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="keyword-highlight">Technical Success</span></h4>
+                        <ul>
+                            <li>✓ High data accuracy</li>
+                            <li>✓ Scalable architecture</li>
+                            <li>✓ Cross-platform compatibility</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 13: Live Demo -->
+            <section>
+                <h2>Live Demo</h2>
+                <div class="title-slide">
+                    <h1><span class="info-highlight">System in Action</span></h1>
+                    <div class="subtitle">Interactive demonstration of the Family Tree Visualization System</div>
+                    <div class="highlight-box">
+                        <p><strong>Demo Features:</strong></p>
+                        <ul>
+                            <li>Tree navigation and exploration</li>
+                            <li>Relationship mapping demonstration</li>
+                            <li>Search functionality showcase</li>
+                            <li>Role-based access examples</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 14: Q&A -->
+            <section>
+                <h2>Questions & Answers</h2>
+                <div class="title-slide">
+                    <h1><span class="success-highlight">Thank You!</span></h1>
+                    <div class="subtitle">I'd be happy to answer any questions about:</div>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <h3><span class="info-highlight">Technical Details</span></h3>
+                            <p>Architecture, algorithms, implementation</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3><span class="success-highlight">Performance</span></h3>
+                            <p>Optimization strategies and benchmarks</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3><span class="warning-highlight">Design Choices</span></h3>
+                            <p>Technology selection and trade-offs</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3><span class="keyword-highlight">Future Work</span></h3>
+                            <p>Potential enhancements and extensions</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Reveal.js JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/highlight/highlight.js"></script>
+
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+            controls: true,
+            progress: true,
+            center: false,
+            touch: true,
+            loop: false,
+            rtl: false,
+            navigationMode: 'default',
+            shuffle: false,
+            fragments: true,
+            fragmentInURL: false,
+            embedded: false,
+            help: true,
+            showNotes: false,
+            autoPlayMedia: null,
+            preloadIframes: null,
+            autoSlide: 0,
+            autoSlideStoppable: true,
+            autoSlideMethod: null,
+            defaultTiming: null,
+            mouseWheel: false,
+            previewLinks: false,
+            postMessage: true,
+            postMessageEvents: false,
+            focusBodyOnPageVisibilityChange: true,
+            width: 1200,
+            height: 800,
+            margin: 0.04,
+            minScale: 0.2,
+            maxScale: 2.0
+        });
+    </script>
+</body>
+
+</html>
